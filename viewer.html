@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AllView</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+  <link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+  <!-- Icons (24x24 stroke, sharp corners). Usage: <svg class="i"><use href="#i-name"/></svg> -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="i-forward" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="i-reload" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66L20 8.5"/><path d="M20 3.5v5h-5"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.6 5.6 3.6 9s-1.1 6.4-3.6 9c-2.5-2.6-3.6-5.6-3.6-9S9.5 5.6 12 3z"/></symbol>
+    <symbol id="i-go" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-scroll" viewBox="0 0 24 24"><path d="M8 4v16M4.5 7.5L8 4l3.5 3.5M16 20V4M12.5 16.5L16 20l3.5-3.5"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1.2-1.2"/></symbol>
+    <symbol id="i-pointer" viewBox="0 0 24 24"><path d="M5 3l14 7.5-6.2 1.7L10 18.5z"/><path d="M13 12.5l5 6.5"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4M13 20h7"/></symbol>
+    <symbol id="i-inspect" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></symbol>
+    <symbol id="i-outline" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" stroke-dasharray="3 3"/><rect x="8" y="8" width="8" height="8"/></symbol>
+    <symbol id="i-nocss" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+    <symbol id="i-scrollbar" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><path d="M15 3v18"/><path d="M18 7v5" stroke-width="2.5"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></symbol>
+    <symbol id="i-ruler" viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="8"/><path d="M6 8v3M10 8v4.5M14 8v3M18 8v4.5"/></symbol>
+    <symbol id="i-wrap" viewBox="0 0 24 24"><path d="M3 6h18M3 12h14.5a3 3 0 0 1 0 6H13"/><path d="M15 15.5L12.5 18l2.5 2.5M3 18h6"/></symbol>
+    <symbol id="i-zoom" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M8 10.5h5M10.5 8v5"/></symbol>
+    <symbol id="i-rotate" viewBox="0 0 24 24"><rect x="3" y="11" width="14" height="10"/><path d="M8 7V5a2 2 0 0 1 2-2h6a5 5 0 0 1 5 5v5"/><path d="M18.5 10.5L21 13l2.5-2.5"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="3.8"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.34-5.66L4 8.5"/><path d="M4 3.5v5h5"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.75 5.8 6.25.8-4.6 4.35 1.2 6.25L12 17.15 6.4 20.2l1.2-6.25L3 9.6l6.25-.8z"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></symbol>
+    <symbol id="i-mobile" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19"/><path d="M11 18.5h2"/></symbol>
+    <symbol id="i-tablet" viewBox="0 0 24 24"><rect x="4" y="2.5" width="16" height="19"/><path d="M11 18.5h2"/></symbol>
+    <symbol id="i-desktop" viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="13"/><path d="M12 17v4M8 21h8"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5M3 17l9 5 9-5"/></symbol>
+  </svg>
+
+  <header class="bar">
+    <div class="row top">
+      <div class="brand" title="AllView">
+        <img class="logo" src="icons/icon-48.png" width="22" height="22" alt="">
+        <span>All<b>View</b></span>
+      </div>
+
+      <form id="urlForm" class="url">
+        <button type="button" class="ib" data-act="back" title="Back" aria-label="Back"><svg class="i"><use href="#i-back"/></svg></button>
+        <button type="button" class="ib" data-act="forward" title="Forward" aria-label="Forward"><svg class="i"><use href="#i-forward"/></svg></button>
+        <button type="button" class="ib" data-act="reload" title="Reload all" aria-label="Reload all"><svg class="i"><use href="#i-reload"/></svg></button>
+        <label class="field">
+          <svg class="i dim"><use href="#i-globe"/></svg>
+          <input id="url" spellcheck="false" autocomplete="off" placeholder="http://127.0.0.1:8000/" aria-label="Address">
+        </label>
+        <button type="button" class="ib star" id="favSite" title="Save to favorite sites" aria-label="Save to favorite sites"><svg class="i"><use href="#i-star"/></svg></button>
+        <button type="submit" class="go" title="Open on every device" aria-label="Open"><svg class="i"><use href="#i-go"/></svg></button>
+      </form>
+
+      <div class="seg" role="group" aria-label="Sync">
+        <button class="tg" data-sync="scroll" title="Sync scrolling"><svg class="i"><use href="#i-scroll"/></svg><span>Scroll</span></button>
+        <button class="tg" data-sync="nav" title="Sync navigation"><svg class="i"><use href="#i-link"/></svg><span>Navigation</span></button>
+        <button class="tg" data-sync="click" title="Sync clicks and text fields"><svg class="i"><use href="#i-pointer"/></svg><span>Interactions</span></button>
+      </div>
+
+      <div class="seg" role="group" aria-label="Page tools">
+        <button class="tg" data-opt="design" title="Edit mode: edit text directly on the page"><svg class="i"><use href="#i-edit"/></svg><span>Edit</span></button>
+        <button class="tg" data-opt="inspect" title="Inspect elements (tag, classes, size)"><svg class="i"><use href="#i-inspect"/></svg><span>Inspect</span></button>
+        <button class="tg" data-opt="outline" title="Outline every element"><svg class="i"><use href="#i-outline"/></svg><span>Outlines</span></button>
+        <button class="tg" data-opt="noCss" title="Disable CSS"><svg class="i"><use href="#i-nocss"/></svg><span>No CSS</span></button>
+        <button class="tg" data-opt="noScrollbar" title="Hide scrollbars"><svg class="i"><use href="#i-scrollbar"/></svg><span>Scrollbars</span></button>
+      </div>
+
+      <div class="seg" role="group" aria-label="View">
+        <label class="sel" title="Grid overlay">
+          <svg class="i"><use href="#i-grid"/></svg>
+          <select id="grid" aria-label="Grid">
+            <option value="off">No grid</option>
+            <option value="8">8px grid</option>
+            <option value="cols12">12 columns</option>
+            <option value="center">Center</option>
+          </select>
+          <svg class="i caret"><use href="#i-chevron"/></svg>
+        </label>
+        <button class="tg" data-view="ruler" title="Rulers" aria-label="Rulers"><svg class="i"><use href="#i-ruler"/></svg></button>
+        <button class="tg" data-view="wrap" title="Wrap devices (off = single horizontal row)" aria-label="Wrap devices"><svg class="i"><use href="#i-wrap"/></svg></button>
+        <label class="sel" title="Zoom">
+          <svg class="i"><use href="#i-zoom"/></svg>
+          <select id="zoom" aria-label="Zoom">
+            <option value="fit">Fit</option>
+            <option value="0.25">25%</option>
+            <option value="0.33">33%</option>
+            <option value="0.5">50%</option>
+            <option value="0.67">67%</option>
+            <option value="0.75">75%</option>
+            <option value="1">100%</option>
+          </select>
+          <svg class="i caret"><use href="#i-chevron"/></svg>
+        </label>
+      </div>
+
+      <div class="seg" role="group" aria-label="Actions">
+        <button class="ib" data-act="rotateAll" title="Rotate all" aria-label="Rotate all"><svg class="i"><use href="#i-rotate"/></svg></button>
+        <button class="ib" data-act="shotAll" title="Screenshot every device" aria-label="Screenshot every device"><svg class="i"><use href="#i-camera"/></svg></button>
+        <button class="ib" data-act="exportHtml" title="Export HTML (handy after editing)" aria-label="Export HTML"><svg class="i"><use href="#i-download"/></svg></button>
+      </div>
+    </div>
+
+    <div class="row lower">
+      <div class="sites" id="sites" aria-label="Favorite sites"></div>
+      <nav class="tabs" id="tabs" aria-label="Devices">
+        <button data-tab="default"><svg class="i"><use href="#i-star"/></svg>Pinned</button>
+        <button data-tab="mobile"><svg class="i"><use href="#i-mobile"/></svg>Mobile</button>
+        <button data-tab="tablet"><svg class="i"><use href="#i-tablet"/></svg>Tablet</button>
+        <button data-tab="desktop"><svg class="i"><use href="#i-desktop"/></svg>Desktop</button>
+        <button data-tab="all"><svg class="i"><use href="#i-layers"/></svg>All</button>
+        <button id="addDevice" class="link" title="Add device"><svg class="i"><use href="#i-plus"/></svg>Add device</button>
+        <button id="resetDevices" class="link muted" title="Restore the default device list"><svg class="i"><use href="#i-reset"/></svg>Reset</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="stage"></main>
+
+  <dialog id="deviceDialog">
+    <form method="dialog" id="deviceForm">
+      <h3><svg class="i"><use href="#i-plus"/></svg>New device</h3>
+      <label>Name <input name="name" required placeholder="My screen"></label>
+      <div class="two">
+        <label>Width <input name="w" type="number" min="100" max="5000" required value="390"></label>
+        <label>Height <input name="h" type="number" min="100" max="5000" required value="844"></label>
+      </div>
+      <label>Type
+        <select name="type">
+          <option value="mobile">Mobile</option>
+          <option value="tablet">Tablet</option>
+          <option value="desktop">Desktop</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" name="fav" checked> Show in Pinned</label>
+      <menu>
+        <button value="cancel" formnovalidate>Cancel</button>
+        <button value="ok" class="primary">Add</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <dialog id="siteDialog">
+    <form method="dialog" id="siteForm">
+      <h3><svg class="i"><use href="#i-globe"/></svg>Favorite site</h3>
+      <label>Name <input name="name" placeholder="My site"></label>
+      <label>Address <input name="url" required spellcheck="false" placeholder="https://example.com/"></label>
+      <menu>
+        <button value="cancel" formnovalidate>Cancel</button>
+        <button value="ok" class="primary">Save</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status"></div>
+  <script src="viewer.js"></script>
+</body>
+</html>
