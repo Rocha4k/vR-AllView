@@ -9,6 +9,9 @@
   let opts = {};
   let styleEl = null;
   let inspectBox = null;
+  let flagged = []; // elements found by the overflow scan
+  let scanTimer = 0;
+  let lastScanKey = '';
 
   const post = (msg) => {
     if (frameId) parent.postMessage({ rv: 1, id: frameId, ...msg }, ORIGIN);
@@ -19,7 +22,10 @@
     const l = document.querySelector('link[rel~="icon" i], link[rel="apple-touch-icon" i]');
     return l && l.href ? l.href : location.origin + '/favicon.ico';
   };
-  const ready = () => post({ type: 'ready', url: location.href, title: document.title, icon: iconHref() });
+  const ready = () => {
+    post({ type: 'ready', url: location.href, title: document.title, icon: iconHref() });
+    report();
+  };
 
   const root = () => document.scrollingElement || document.documentElement;
   const maxX = () => Math.max(1, root().scrollWidth - innerWidth);
@@ -51,19 +57,28 @@
     }
   }
 
+  function describe(el) {
+    const cls = typeof el.className === 'string' && el.className.trim()
+      ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '';
+    return el.localName + (el.id ? '#' + el.id : '') + cls;
+  }
+
   // SVG elements (icons inside buttons, charts...) have no .click().
   function fireClick(el) {
     if (typeof el.click === 'function') el.click();
     else el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true, view: window }));
   }
 
+  // ---------- page tools ----------
+
   function applyOpts(next) {
     opts = next || {};
     document.designMode = opts.design ? 'on' : 'off';
 
-    let css = '';
+    let css = '[data-allview-flash]{outline:3px solid #0a84ff!important;outline-offset:2px!important;transition:outline-color .2s}';
     if (opts.outline) css += '*{outline:1px solid rgba(255,40,100,.55)!important;outline-offset:-1px!important}';
     if (opts.noScrollbar) css += 'html{scrollbar-width:none!important}::-webkit-scrollbar{display:none!important}';
+    if (opts.overflow) css += '[data-allview-overflow]{outline:2px solid #ff3b30!important;outline-offset:-2px!important;background-color:rgba(255,59,48,.10)!important}';
     if (!styleEl) {
       styleEl = document.createElement('style');
       styleEl.dataset.rv = '1';
@@ -75,6 +90,7 @@
       if (sheet.ownerNode !== styleEl) sheet.disabled = !!opts.noCss;
     }
     if (!opts.inspect && inspectBox) inspectBox.style.display = 'none';
+    markOverflow();
   }
 
   function ensureInspectBox() {
@@ -94,6 +110,118 @@
     return inspectBox;
   }
 
+  // ---------- horizontal overflow ----------
+
+  // An element only widens the page if no ancestor clips it and it is not fixed.
+  function clipped(el) {
+    for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+      const cs = getComputedStyle(p);
+      if (cs.position === 'fixed' || cs.overflowX !== 'visible') return true;
+    }
+    return false;
+  }
+
+  function scanOverflow() {
+    const vw = document.documentElement.clientWidth;
+    const extra = Math.round(root().scrollWidth - vw);
+    const found = [];
+    if (extra > 1 && document.body) {
+      const set = new Set();
+      for (const el of document.body.getElementsByTagName('*')) {
+        if (el === inspectBox || el.parentElement === inspectBox) continue;
+        const r = el.getBoundingClientRect();
+        if (!r.width && !r.height) continue;
+        if (r.right + scrollX <= vw + 1) continue;
+        // Report the outermost culprit, not every child inside it.
+        let inside = false;
+        for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+          if (set.has(p)) { inside = true; break; }
+        }
+        if (inside || getComputedStyle(el).position === 'fixed' || clipped(el)) continue;
+        set.add(el);
+        found.push({ el, over: Math.round(r.right + scrollX - vw), width: Math.round(r.width) });
+        if (found.length >= 40) break;
+      }
+    }
+    flagged = found.map((x) => x.el);
+    markOverflow();
+    // Siblings that overflow together point at their parent (a row that never wraps).
+    const groups = new Map();
+    for (const x of found) {
+      const p = x.el.parentElement;
+      if (!groups.has(p)) groups.set(p, []);
+      groups.get(p).push(x);
+    }
+    const items = [];
+    for (const [parent, list] of groups) {
+      if (list.length > 1 && parent && parent !== document.body) {
+        items.push({
+          path: cssPath(parent),
+          label: `${describe(parent)} › ${list.length} children`,
+          over: Math.max(...list.map((x) => x.over)),
+          width: Math.round(parent.scrollWidth),
+        });
+      } else {
+        for (const x of list) items.push({ path: cssPath(x.el), label: describe(x.el), over: x.over, width: x.width });
+      }
+    }
+    items.sort((a, b) => b.over - a.over);
+    return { extra: Math.max(0, extra), items };
+  }
+
+  function markOverflow() {
+    for (const el of document.querySelectorAll('[data-allview-overflow]')) {
+      if (!opts.overflow || !flagged.includes(el)) el.removeAttribute('data-allview-overflow');
+    }
+    if (opts.overflow) for (const el of flagged) el.setAttribute('data-allview-overflow', '');
+  }
+
+  // ---------- media queries (for the breakpoint bar) ----------
+
+  function collectMedia() {
+    const texts = new Set();
+    const remote = new Set();
+    const walkRules = (rules) => {
+      for (const r of rules) {
+        if (r instanceof CSSMediaRule) texts.add(r.media.mediaText);
+        if (r instanceof CSSImportRule && r.styleSheet) walkSheet(r.styleSheet);
+        if (r.cssRules) walkRules(r.cssRules);
+      }
+    };
+    const walkSheet = (sheet) => {
+      if (sheet.media && sheet.media.mediaText) texts.add(sheet.media.mediaText);
+      let rules;
+      try {
+        rules = sheet.cssRules;
+      } catch {
+        // Stylesheet from another origin: the viewer fetches and reads it.
+        if (sheet.href) remote.add(sheet.href);
+        return;
+      }
+      walkRules(rules);
+    };
+    for (const sheet of document.styleSheets) if (sheet.ownerNode !== styleEl) walkSheet(sheet);
+    return { texts: [...texts], remote: [...remote] };
+  }
+
+  function report(force) {
+    if (!frameId) return;
+    const ovf = scanOverflow();
+    const media = collectMedia();
+    const key = JSON.stringify([ovf, media]);
+    if (!force && key === lastScanKey) return;
+    lastScanKey = key;
+    post({ type: 'overflow', ...ovf });
+    post({ type: 'media', ...media });
+  }
+
+  const scheduleReport = (ms = 400) => {
+    clearTimeout(scanTimer);
+    scanTimer = setTimeout(() => report(), ms);
+  };
+
+  // ---------- events ----------
+
   addEventListener('mousemove', (e) => {
     if (!frameId || !opts.inspect) return;
     const el = e.target;
@@ -104,12 +232,9 @@
       display: 'block', left: r.left + 'px', top: r.top + 'px',
       width: r.width + 'px', height: r.height + 'px',
     });
-    const cls = typeof el.className === 'string' && el.className.trim()
-      ? '.' + el.className.trim().split(/\s+/).slice(0, 3).join('.') : '';
     const cs = getComputedStyle(el);
     box.firstChild.textContent =
-      el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + cls +
-      '  ' + Math.round(r.width) + '×' + Math.round(r.height) +
+      describe(el) + '  ' + Math.round(r.width) + '×' + Math.round(r.height) +
       '  ' + cs.fontSize + ' ' + cs.display;
     box.firstChild.style.top = r.top < 24 ? r.height + 2 + 'px' : '-22px';
   }, true);
@@ -129,6 +254,24 @@
     post({ type: 'input', path: cssPath(e.target), value: e.target.value });
   }, true);
 
+  addEventListener('resize', () => frameId && scheduleReport(250));
+  addEventListener('load', () => frameId && scheduleReport(100));
+
+  function watchDom() {
+    const mo = new MutationObserver((records) => {
+      for (const r of records) {
+        const t = r.target;
+        if (t === styleEl || t === inspectBox || (inspectBox && inspectBox.contains(t))) continue;
+        if (r.type === 'attributes' && r.attributeName.startsWith('data-allview')) continue;
+        scheduleReport(600);
+        return;
+      }
+    });
+    mo.observe(document.documentElement, {
+      childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'],
+    });
+  }
+
   addEventListener('message', (e) => {
     const d = e.data;
     if (e.origin !== ORIGIN || e.source !== parent || !d || !d.rv) return;
@@ -137,8 +280,11 @@
         const first = !frameId;
         frameId = d.id;
         applyOpts(d.opts);
+        lastScanKey = '';
         ready();
         if (first) {
+          watchDom();
+          setTimeout(() => report(), 1500); // late fonts, images and lazy CSS
           // SPA navigation (pushState) does not fire "load" on the iframe.
           setInterval(() => {
             if (location.href !== lastHref) {
@@ -170,11 +316,30 @@
         }
         break;
       }
+      case 'reveal': {
+        const el = find(d.path);
+        if (!el) break;
+        el.scrollIntoView({ block: 'center', inline: 'nearest' });
+        el.setAttribute('data-allview-flash', '');
+        setTimeout(() => el.removeAttribute('data-allview-flash'), 1400);
+        break;
+      }
+      case 'rescan':
+        report(true);
+        break;
       case 'back': history.back(); break;
       case 'forward': history.forward(); break;
-      case 'html':
-        post({ type: 'html', html: '<!doctype html>\n' + document.documentElement.outerHTML });
+      case 'html': {
+        // Export without AllView's own style tag and marker attributes.
+        const copy = document.documentElement.cloneNode(true);
+        copy.querySelectorAll('style[data-rv]').forEach((n) => n.remove());
+        copy.querySelectorAll('[data-allview-overflow],[data-allview-flash]').forEach((n) => {
+          n.removeAttribute('data-allview-overflow');
+          n.removeAttribute('data-allview-flash');
+        });
+        post({ type: 'html', html: '<!doctype html>\n' + copy.outerHTML });
         break;
+      }
     }
   });
 })();

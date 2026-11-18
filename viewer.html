@@ -39,6 +39,11 @@
     <symbol id="i-tablet" viewBox="0 0 24 24"><rect x="4" y="2.5" width="16" height="19"/><path d="M11 18.5h2"/></symbol>
     <symbol id="i-desktop" viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="13"/><path d="M12 17v4M8 21h8"/></symbol>
     <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5M3 17l9 5 9-5"/></symbol>
+    <symbol id="i-overflow" viewBox="0 0 24 24"><path d="M14 5H3v14h11"/><path d="M10 12h11M18 9l3 3-3 3"/></symbol>
+    <symbol id="i-fluid" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14"/><path d="M6.5 12h11M9 9.5L6.5 12 9 14.5M15 9.5l2.5 2.5-2.5 2.5"/></symbol>
+    <symbol id="i-compare" viewBox="0 0 24 24"><rect x="3" y="3" width="12" height="12"/><path d="M9 15v6h12V9h-6"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h15M15 4l4 4-4 4M20 16H5M9 12l-4 4 4 4"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 12h10"/></symbol>
   </svg>
 
   <header class="bar">
@@ -72,6 +77,7 @@
         <button class="tg" data-opt="outline" title="Outline every element"><svg class="i"><use href="#i-outline"/></svg><span>Outlines</span></button>
         <button class="tg" data-opt="noCss" title="Disable CSS"><svg class="i"><use href="#i-nocss"/></svg><span>No CSS</span></button>
         <button class="tg" data-opt="noScrollbar" title="Hide scrollbars"><svg class="i"><use href="#i-scrollbar"/></svg><span>Scrollbars</span></button>
+        <button class="tg" data-opt="overflow" title="Highlight elements that make the page scroll sideways"><svg class="i"><use href="#i-overflow"/></svg><span>Overflow</span></button>
       </div>
 
       <div class="seg" role="group" aria-label="View">
@@ -102,12 +108,39 @@
         </label>
       </div>
 
+      <div class="seg" role="group" aria-label="Compare">
+        <button class="tg" id="compareBtn" title="Compare with another site, e.g. staging against production"><svg class="i"><use href="#i-compare"/></svg><span>Compare</span></button>
+      </div>
+
       <div class="seg" role="group" aria-label="Actions">
         <button class="ib" data-act="rotateAll" title="Rotate all" aria-label="Rotate all"><svg class="i"><use href="#i-rotate"/></svg></button>
         <button class="ib" data-act="shotAll" title="Screenshot every device" aria-label="Screenshot every device"><svg class="i"><use href="#i-camera"/></svg></button>
         <button class="ib" data-act="exportHtml" title="Export HTML (handy after editing)" aria-label="Export HTML"><svg class="i"><use href="#i-download"/></svg></button>
       </div>
     </div>
+
+    <form class="row cmp" id="cmpRow" hidden>
+      <span class="cmp-tag">B</span>
+      <div class="url cmp-url">
+        <label class="field">
+          <svg class="i dim"><use href="#i-globe"/></svg>
+          <input id="cmpBase" spellcheck="false" autocomplete="off" placeholder="https://staging.example.com" aria-label="Address of site B">
+        </label>
+        <label class="sel cmp-pick" title="Pick B from your favorite sites">
+          <select id="cmpPick" aria-label="Pick from favorite sites"></select>
+          <svg class="i caret"><use href="#i-chevron"/></svg>
+        </label>
+        <button type="submit" class="go" title="Load B on every device" aria-label="Load B"><svg class="i"><use href="#i-go"/></svg></button>
+      </div>
+      <div class="seg" role="group" aria-label="Compare mode">
+        <button type="button" class="tg" data-cmp-mode="opacity" title="B on top of A, with adjustable opacity"><span>Opacity</span></button>
+        <button type="button" class="tg" data-cmp-mode="difference" title="Difference blend: identical pixels turn black"><span>Difference</span></button>
+        <button type="button" class="tg" data-cmp-mode="swipe" title="A on the left, B on the right, split at the slider"><span>Swipe</span></button>
+      </div>
+      <label class="cmp-amount"><span id="cmpAmountLabel">Opacity</span><input type="range" id="cmpAmount" min="0" max="100" step="1"><output id="cmpAmountOut"></output></label>
+      <button type="button" class="ib" id="cmpSwap" title="Swap A and B" aria-label="Swap A and B"><svg class="i"><use href="#i-swap"/></svg></button>
+      <span class="cmp-note">B opens the same path as A on its own address</span>
+    </form>
 
     <div class="row lower">
       <div class="sites" id="sites" aria-label="Favorite sites"></div>
@@ -121,6 +154,7 @@
         <button id="resetDevices" class="link muted" title="Restore the default device list"><svg class="i"><use href="#i-reset"/></svg>Reset</button>
       </nav>
     </div>
+    <section id="bpbar" class="bpbar" hidden aria-label="Breakpoints"></section>
   </header>
 
   <main id="stage"></main>
