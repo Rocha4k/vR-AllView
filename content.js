@@ -1,11 +1,10 @@
-// Runs in every iframe, but only wakes up after the extension viewer sends
-// "hello". On normal pages it does nothing.
+// runs in every frame, idle until the viewer says hello
 (() => {
   if (window.top === window) return;
   const ORIGIN = new URL(chrome.runtime.getURL('')).origin;
   let frameId = null;
   let lastHref = location.href;
-  let ignoreScrollUntil = 0;
+  let leading = false; // this frame drives the synced scroll
   let opts = {};
   let styleEl = null;
   let inspectBox = null;
@@ -17,7 +16,7 @@
     if (frameId) parent.postMessage({ rv: 1, id: frameId, ...msg }, ORIGIN);
   };
 
-  // Favicon declared by the page (useful for local sites the browser doesn't know yet).
+  // favicon declared by the page, for sites the browser hasn't cached
   const iconHref = () => {
     const l = document.querySelector('link[rel~="icon" i], link[rel="apple-touch-icon" i]');
     return l && l.href ? l.href : location.origin + '/favicon.ico';
@@ -42,7 +41,7 @@
       for (let s = el.previousElementSibling; s; s = s.previousElementSibling) {
         if (s.tagName === el.tagName) i++;
       }
-      // localName keeps the case of SVG elements (clipPath, linearGradient...).
+      // localName keeps svg casing (clipPath, linearGradient)
       parts.unshift(CSS.escape(el.localName) + ':nth-of-type(' + i + ')');
       el = el.parentElement;
     }
@@ -63,13 +62,13 @@
     return el.localName + (el.id ? '#' + el.id : '') + cls;
   }
 
-  // SVG elements (icons inside buttons, charts...) have no .click().
+  // svg elements have no .click()
   function fireClick(el) {
     if (typeof el.click === 'function') el.click();
     else el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true, view: window }));
   }
 
-  // ---------- page tools ----------
+  // page tools
 
   function applyOpts(next) {
     opts = next || {};
@@ -104,15 +103,15 @@
     Object.assign(inspectBox.firstChild.style, {
       position: 'absolute', left: '-1px', top: '-22px', whiteSpace: 'nowrap',
       font: '11px/20px ui-monospace,Consolas,monospace', padding: '0 6px',
-      background: '#ce3c33', color: '#fff', borderRadius: '0',
+      background: '#ce3c33', color: '#fff',
     });
     document.documentElement.appendChild(inspectBox);
     return inspectBox;
   }
 
-  // ---------- horizontal overflow ----------
+  // horizontal overflow
 
-  // An element only widens the page if no ancestor clips it and it is not fixed.
+  // an ancestor clips it or pins it, so it cannot widen the page
   function clipped(el) {
     for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
       const cs = getComputedStyle(p);
@@ -132,7 +131,7 @@
         const r = el.getBoundingClientRect();
         if (!r.width && !r.height) continue;
         if (r.right + scrollX <= vw + 1) continue;
-        // Report the outermost culprit, not every child inside it.
+        // only report the outermost culprit
         let inside = false;
         for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
           if (set.has(p)) { inside = true; break; }
@@ -145,7 +144,7 @@
     }
     flagged = found.map((x) => x.el);
     markOverflow();
-    // Siblings that overflow together point at their parent (a row that never wraps).
+    // siblings overflowing together blame their parent
     const groups = new Map();
     for (const x of found) {
       const p = x.el.parentElement;
@@ -176,7 +175,7 @@
     if (opts.overflow) for (const el of flagged) el.setAttribute('data-allview-overflow', '');
   }
 
-  // ---------- media queries (for the breakpoint bar) ----------
+  // media queries for the breakpoint bar
 
   function collectMedia() {
     const texts = new Set();
@@ -194,7 +193,7 @@
       try {
         rules = sheet.cssRules;
       } catch {
-        // Stylesheet from another origin: the viewer fetches and reads it.
+        // cross-origin sheet, the viewer fetches it
         if (sheet.href) remote.add(sheet.href);
         return;
       }
@@ -220,7 +219,7 @@
     scanTimer = setTimeout(() => report(), ms);
   };
 
-  // ---------- events ----------
+  // events
 
   addEventListener('mousemove', (e) => {
     if (!frameId || !opts.inspect) return;
@@ -239,9 +238,20 @@
     box.firstChild.style.top = r.top < 24 ? r.height + 2 + 'px' : '-22px';
   }, true);
 
+  // only real user input makes this frame the scroll leader
+  const lead = (e) => { if (e.isTrusted) leading = true; };
+  for (const t of ['wheel', 'touchstart', 'keydown', 'pointerdown']) {
+    addEventListener(t, lead, { capture: true, passive: true });
+  }
+
+  let scrollQueued = false;
   addEventListener('scroll', () => {
-    if (!frameId || Date.now() < ignoreScrollUntil) return;
-    post({ type: 'scroll', x: scrollX / maxX(), y: scrollY / maxY() });
+    if (!frameId || !leading || scrollQueued) return;
+    scrollQueued = true;
+    requestAnimationFrame(() => {
+      scrollQueued = false;
+      if (leading) post({ type: 'scroll', x: scrollX / maxX(), y: scrollY / maxY() });
+    });
   }, { passive: true });
 
   addEventListener('click', (e) => {
@@ -284,8 +294,8 @@
         ready();
         if (first) {
           watchDom();
-          setTimeout(() => report(), 1500); // late fonts, images and lazy CSS
-          // SPA navigation (pushState) does not fire "load" on the iframe.
+          setTimeout(() => report(), 1500); // late fonts, images and lazy css
+          // spa navigation doesn't fire load
           setInterval(() => {
             if (location.href !== lastHref) {
               lastHref = location.href;
@@ -299,8 +309,9 @@
         applyOpts(d.opts);
         break;
       case 'scroll':
-        ignoreScrollUntil = Date.now() + 120;
-        scrollTo(d.x * maxX(), d.y * maxY());
+        leading = false;
+        // instant, or smooth-scroll pages restart the animation on every message
+        scrollTo({ left: d.x * maxX(), top: d.y * maxY(), behavior: 'instant' });
         break;
       case 'click': {
         const el = find(d.path);
@@ -319,6 +330,7 @@
       case 'reveal': {
         const el = find(d.path);
         if (!el) break;
+        leading = true;
         el.scrollIntoView({ block: 'center', inline: 'nearest' });
         el.setAttribute('data-allview-flash', '');
         setTimeout(() => el.removeAttribute('data-allview-flash'), 1400);
@@ -330,7 +342,7 @@
       case 'back': history.back(); break;
       case 'forward': history.forward(); break;
       case 'html': {
-        // Export without AllView's own style tag and marker attributes.
+        // strip our style tag and markers
         const copy = document.documentElement.cloneNode(true);
         copy.querySelectorAll('style[data-rv]').forEach((n) => n.remove());
         copy.querySelectorAll('[data-allview-overflow],[data-allview-flash]').forEach((n) => {

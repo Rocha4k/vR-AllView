@@ -7,7 +7,7 @@
   --line-2: #3a3a41;
   --text: #ececef;
   --muted: #8a8a94;
-  --accent: #ce3c33;          /* Visotrónica red */
+  --accent: #ce3c33;          /* visotrónica red */
   --accent-hover: #dd4a40;
   --accent-text: #ec5d53;     /* lighter, for text/icons on dark */
   --accent-ink: #ffffff;
@@ -25,12 +25,12 @@ button { cursor: pointer; }
 :focus { outline: none; }
 :focus-visible { outline: 1px solid var(--accent-text); outline-offset: 1px; }
 
-/* ---------- icons ---------- */
+/* icons */
 .i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6;
   stroke-linecap: square; stroke-linejoin: miter; vertical-align: middle; }
 .i.dim { color: var(--muted); }
 
-/* ---------- top bar ---------- */
+/* top bar */
 .bar { position: sticky; top: 0; z-index: 10; background: var(--panel); border-bottom: 1px solid var(--line); }
 .row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; flex-wrap: wrap; }
 
@@ -51,7 +51,7 @@ button { cursor: pointer; }
 .url .go .i { stroke-width: 2; }
 .url .go:hover { background: var(--accent-hover); }
 
-/* Grouped controls: shared borders, sharp corners */
+/* grouped controls share borders */
 .seg { display: flex; align-items: stretch; height: var(--h); }
 .seg > * + * { margin-left: -1px; }
 .ib, .tg, .sel { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -82,7 +82,7 @@ select option { background: var(--panel); color: var(--text); }
 .url .star.on { color: var(--accent-text); }
 .url .star.on .i { fill: currentColor; }
 
-/* ---------- lower row: favorite sites + device tabs ---------- */
+/* lower row: favorite sites + device tabs */
 .lower { padding: 0 0 0 14px; gap: 0; flex-wrap: nowrap; align-items: stretch; border-top: 1px solid var(--line); }
 
 .sites { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 7px 14px 7px 0;
@@ -126,13 +126,13 @@ select option { background: var(--panel); color: var(--text); }
   .tabs .link:first-of-type { margin-left: auto; }
 }
 
-/* ---------- stage ---------- */
+/* stage */
 #stage { display: flex; flex-wrap: wrap; gap: 40px 32px; padding: 28px; align-items: flex-start; }
 body.nowrap #stage { flex-wrap: nowrap; overflow-x: auto; }
 body.rulers-on #stage { padding: 44px 28px 28px 48px; gap: 56px 52px; }
 
 .card { flex: none; display: flex; flex-direction: column; container-type: inline-size; }
-.card-head { display: flex; align-items: stretch; min-height: 30px;
+.card-head { position: relative; display: flex; align-items: stretch; min-height: 30px;
   background: var(--panel); border: 1px solid var(--line); border-bottom: 0; color: var(--muted); font-size: 12px; }
 .card-head .meta { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 7px; padding: 0 9px; overflow: hidden; }
 .card-head .type { width: 14px; height: 14px; color: var(--muted); }
@@ -147,7 +147,7 @@ body.rulers-on #stage { padding: 44px 28px 28px 48px; gap: 56px 52px; }
 .card-head .tools .fav.on .i { fill: currentColor; }
 .card-head .tools .rm:hover { color: #fff; background: var(--accent); }
 
-/* Narrow cards: tools wrap to a second line */
+/* narrow cards wrap the tools */
 @container (max-width: 380px) {
   .card-head { flex-wrap: wrap; }
   .card-head .meta { flex-basis: 100%; min-height: 30px; }
@@ -159,7 +159,7 @@ body.rulers-on #stage { padding: 44px 28px 28px 48px; gap: 56px 52px; }
   .card-head .dims { display: none; }
 }
 
-.screen { position: relative; background: #fff; outline: 1px solid var(--line-2); box-shadow: 0 12px 40px rgba(0, 0, 0, .55); }
+.screen { position: relative; isolation: isolate; background: #fff; outline: 1px solid var(--line-2); box-shadow: 0 12px 40px rgba(0, 0, 0, .55); }
 .screen iframe { position: absolute; top: 0; left: 0; border: 0; background: #fff; transform-origin: 0 0; transform: scale(var(--z)); }
 
 .overlay { position: absolute; inset: 0; pointer-events: none; display: none; }
@@ -186,7 +186,7 @@ body.rulers-on .card-head { margin-bottom: 20px; border-bottom: 1px solid var(--
 .empty { display: flex; align-items: center; gap: 10px; color: var(--muted); margin: 40px auto; padding: 16px 20px;
   border: 1px dashed var(--line-2); }
 
-/* ---------- dialogs ---------- */
+/* dialogs */
 dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line-2); border-top: 2px solid var(--accent);
   border-radius: 0; padding: 20px; width: 340px; box-shadow: 0 20px 60px rgba(0, 0, 0, .6); }
 dialog::backdrop { background: rgba(0, 0, 0, .65); }
@@ -206,7 +206,7 @@ dialog menu button:hover { background: var(--hover); border-color: var(--line-2)
 dialog .primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
 dialog .primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 
-/* ---------- toast ---------- */
+/* toast */
 #toast { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 6px); z-index: 20;
   background: var(--raise); border: 1px solid var(--line-2); border-left: 2px solid var(--accent);
   padding: 9px 14px; font-size: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
@@ -214,8 +214,7 @@ dialog .primary:hover { background: var(--accent-hover); border-color: var(--acc
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 body.capturing .bar, body.capturing #toast { visibility: hidden; }
 
-/* ---------- horizontal overflow ---------- */
-.card-head { position: relative; }
+/* horizontal overflow */
 .card-head .ovf { flex: none; display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px 0 4px;
   background: var(--accent); border: 0; color: #fff; font: 600 11px/1 var(--mono); }
 .card-head .ovf[hidden] { display: none; }
@@ -238,7 +237,7 @@ body.capturing .bar, body.capturing #toast { visibility: hidden; }
 .ovf-panel li span { font-size: 11px; color: var(--muted); }
 .ovf-panel p { margin: 0; padding: 10px; font-size: 12px; color: var(--muted); }
 
-/* ---------- fluid device + breakpoint bar ---------- */
+/* fluid device + breakpoint bar */
 .card.fluid .screen { outline-color: var(--accent); }
 .grip { position: absolute; top: 0; bottom: 0; right: -12px; width: 12px; cursor: ew-resize; z-index: 3;
   background: var(--raise); border: 1px solid var(--line-2); border-left: 0; }
@@ -291,7 +290,7 @@ body.dragging iframe { pointer-events: none; }
   .bp-hint { display: none; }
 }
 
-/* ---------- compare A with B ---------- */
+/* compare A with B */
 .cmp { gap: 10px; border-top: 1px solid var(--line); padding-top: 8px; padding-bottom: 8px; }
 .cmp[hidden] { display: none; }
 .cmp-tag { display: grid; place-items: center; width: 22px; height: 22px; background: var(--accent); color: #fff; font: 700 12px/1 var(--mono); }
@@ -304,7 +303,6 @@ body.dragging iframe { pointer-events: none; }
 .cmp-amount output { width: 34px; font: 11px var(--mono); color: var(--text); }
 .cmp-note { font-size: 11px; color: #5c5c64; }
 
-.screen { isolation: isolate; }
 .screen iframe.b { pointer-events: none; }
 .screen iframe.b[hidden] { display: none; }
 body.cmp-opacity .screen iframe.b { opacity: var(--cmp-o); }

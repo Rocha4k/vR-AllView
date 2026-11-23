@@ -1,4 +1,4 @@
-// Opens the viewer with the current tab's URL.
+// open the viewer with the current tab's url
 chrome.action.onClicked.addListener((tab) => {
   const url = tab.url && /^(https?|file):/.test(tab.url) ? tab.url : '';
   chrome.tabs.create({
@@ -7,7 +7,7 @@ chrome.action.onClicked.addListener((tab) => {
   });
 });
 
-// The rule that strips X-Frame-Options/CSP is scoped to the viewer tab; clean it up on close.
+// drop the viewer tab's header rule when it closes
 chrome.tabs.onRemoved.addListener((tabId) => {
   chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: [tabId] }).catch(() => {});
 });

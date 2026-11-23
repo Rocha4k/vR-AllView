@@ -42,10 +42,10 @@ const settings = {
 let currentUrl = '';
 let pageTitle = '';
 let lastScroll = { x: 0, y: 0 };
-// id -> { dev, card, screen, iframe, iframeB, url, loading, bTarget, ovf, media, panel }
+// device id -> frame state
 const frames = new Map();
 
-// ---------- utilities ----------
+// utilities
 
 function save() {
   chrome.storage.local.set({ settings });
@@ -86,7 +86,7 @@ function zoomValue() {
   const avail = innerHeight - $('.bar').offsetHeight - (settings.view.ruler ? 110 : 90);
   let z = 1;
   for (const f of frames.values()) z = Math.min(z, avail / dims(f).h);
-  return Math.max(0.1, Math.min(1, z));
+  return clamp(z, 0.1, 1);
 }
 
 function post(win, msg) {
@@ -98,7 +98,7 @@ function post(win, msg) {
 const send = (f, msg) => post(f.iframe.contentWindow, msg);
 const sendB = (f, msg) => compareActive() && post(f.iframeB.contentWindow, msg);
 
-// Every A frame except the source, plus every B frame.
+// every A frame except the source, plus every B frame
 function broadcast(msg, exceptFrame) {
   for (const f of frames.values()) {
     if (f !== exceptFrame) send(f, msg);
@@ -106,7 +106,7 @@ function broadcast(msg, exceptFrame) {
   }
 }
 
-// ---------- headers: allow sites that block iframes ----------
+// strip headers that block framing
 
 async function allowFraming() {
   const tab = await chrome.tabs.getCurrent();
@@ -130,7 +130,7 @@ async function allowFraming() {
   });
 }
 
-// ---------- render ----------
+// render
 
 function visibleDevices() {
   const t = settings.tab;
@@ -233,8 +233,7 @@ function buildRuler(el, size, z, prop) {
   el.innerHTML = html;
 }
 
-// "loading": the first "ready" after we load a URL (redirects included)
-// does not count as user navigation.
+// the first ready after load(), redirects included, isn't user navigation
 function load(f, url) {
   f.url = url;
   f.loading = true;
@@ -257,13 +256,12 @@ function loadAll(url) {
   for (const f of frames.values()) load(f, url);
 }
 
-// ---------- fluid device + breakpoint bar ----------
+// fluid device + breakpoint bar
 
-const bp = { list: [], pending: 0, token: 0, lo: FLUID_MIN, hi: 1920, drag: false };
-const remoteMedia = new Map(); // stylesheet URL -> Promise<string[]>
+const bp = { list: [], pending: 0, token: 0, lo: FLUID_MIN, hi: 1920 };
+const remoteMedia = new Map(); // stylesheet url -> Promise<string[]>
 
-// Stylesheets from other origins can't be read from inside the page; the
-// extension page can fetch them thanks to its host permissions.
+// cross-origin sheets can't be read in the page, host permissions let us fetch them
 function fetchMedia(href) {
   if (!remoteMedia.has(href)) {
     remoteMedia.set(href, fetch(href)
@@ -277,7 +275,7 @@ function fetchMedia(href) {
 const toPx = (v, unit) => parseFloat(v) * (/em$/i.test(unit) ? 16 : 1);
 const FLIP = { '>=': '<=', '<=': '>=', '>': '<', '<': '>' };
 
-// The width where the layout changes: min-width: 768px -> 768, max-width: 767px -> 768.
+// width where the layout flips: min-width 768px -> 768, max-width 767px -> 768
 function boundary(op, v) {
   switch (op) {
     case '>=': return { w: Math.ceil(v), kind: 'min' };
@@ -359,7 +357,7 @@ function renderBp() {
       <div class="bp-scale"><span>${bp.lo}</span><span>${bp.hi}</span></div>
     </div>`;
 
-  // Two label rows so close breakpoints don't overlap; hide a label if both are taken.
+  // two label rows so close ticks don't overlap
   const track = $('#bpTrack');
   const tw = track.clientWidth;
   const last = [-1e9, -1e9];
@@ -391,8 +389,7 @@ function updateBp() {
   for (const t of $$('.bp-tick')) t.classList.toggle('hit', +t.dataset.w === w);
 }
 
-// Ask a frame to re-check overflow after we change its size, without relying
-// on the page's own resize event.
+// rescan after resizing a frame, the page's resize event isn't reliable
 function rescanSoon(f) {
   clearTimeout(f.rescanTimer);
   f.rescanTimer = setTimeout(() => send(f, { cmd: 'rescan' }), 300);
@@ -414,7 +411,7 @@ function setFluidWidth(w, persist = true) {
 function widthFromTrack(clientX) {
   const r = $('#bpTrack').getBoundingClientRect();
   let w = bp.lo + ((clientX - r.left) / r.width) * (bp.hi - bp.lo);
-  // Snap to a breakpoint within 6 screen pixels.
+  // snap to breakpoints within 6 screen px
   const px = (bp.hi - bp.lo) / r.width;
   for (const b of bp.list) if (Math.abs(b.w - w) <= 6 * px) w = b.w;
   return w;
@@ -469,7 +466,7 @@ function bindBreakpointBar() {
   });
 }
 
-// The handle on the right edge of the Fluid frame.
+// resize handle on the fluid frame
 function bindGrip(f) {
   const grip = $('.grip', f.card);
   grip.addEventListener('pointerdown', (e) => {
@@ -491,7 +488,7 @@ function bindGrip(f) {
   });
 }
 
-// ---------- horizontal overflow ----------
+// horizontal overflow
 
 function updateOverflow(f) {
   const { extra, items } = f.ovf;
@@ -531,11 +528,11 @@ function setOpt(name, value) {
   for (const f of frames.values()) if (!$('.ovf-panel', f.card).hidden) renderOverflowPanel(f);
 }
 
-// ---------- compare A with B ----------
+// compare A with B
 
 const compareActive = () => settings.compare.on && !!settings.compare.base;
 
-// B keeps A's path, query and hash, on B's own origin.
+// A's path, query and hash on B's origin
 function bUrlFor(aUrl) {
   try {
     const a = new URL(aUrl);
@@ -636,7 +633,7 @@ function bindCompare() {
   });
 }
 
-// ---------- favorite sites ----------
+// favorite sites
 
 const urlKey = (u) => (u || '').replace(/#.*$/, '').replace(/\/+$/, '');
 const findSite = (u) => settings.sites.find((x) => urlKey(x.url) === urlKey(u));
@@ -657,10 +654,10 @@ function originOf(u) {
   }
 }
 
-// The browser's own favicon cache ("favicon" permission).
+// browser favicon cache, needs the favicon permission
 const faviconApi = (u) => chrome.runtime.getURL('/_favicon/') + '?pageUrl=' + encodeURIComponent(u) + '&size=32';
 
-// Minibox: try the page's favicon, then the browser's, and finally an initial.
+// page favicon, then the browser's, then the first letter
 function faviconBox(site) {
   const box = document.createElement('span');
   box.className = 'fbox';
@@ -746,7 +743,7 @@ function openSiteDialog() {
   (currentUrl ? form.elements.name : form.elements.url).select();
 }
 
-// Remember the favicon the page declares, for sites the browser hasn't cached.
+// keep the page's declared favicon for uncached sites
 function rememberIcon(url, iconUrl) {
   if (!iconUrl) return;
   const origin = originOf(url);
@@ -778,7 +775,7 @@ function bindSites() {
     addSite(fd.get('name'), fd.get('url'));
   });
 
-  // Drag to reorder
+  // drag to reorder
   const bar = $('#sites');
   bar.addEventListener('dragstart', (e) => {
     const el = e.target.closest && e.target.closest('.site');
@@ -807,7 +804,7 @@ function bindSites() {
   });
 }
 
-// ---------- actions ----------
+// actions
 
 async function cardAction(f, c, btn) {
   switch (c) {
@@ -865,7 +862,7 @@ async function screenshot(list) {
   document.body.classList.add('capturing');
   try {
     for (const f of list) {
-      // Zoom in as far as the window allows so the capture is sharp.
+      // zoom in as far as the window allows for a sharp capture
       const { w: dw0, h: dh0 } = dims(f);
       const barH = $('.bar').offsetHeight;
       layout(Math.min(1, (innerWidth - 60) / dw0, (innerHeight - barH - 60) / dh0));
@@ -887,7 +884,7 @@ async function screenshot(list) {
       canvas.height = Math.round(h * scale);
       canvas.getContext('2d').drawImage(img, x * scale, y * scale, w * scale, h * scale, 0, 0, canvas.width, canvas.height);
       download(canvas.toDataURL('image/png'), `${slug(f.dev.name)}-${dw0}x${dh0}.png`);
-      if (list.length > 1) await wait(550); // Chrome limit: 2 captures per second
+      if (list.length > 1) await wait(550); // chrome allows 2 captures per second
     }
   } catch (err) {
     toast('Screenshot failed: ' + err.message);
@@ -933,7 +930,7 @@ function toolbarAction(act) {
       break;
     case 'back':
     case 'forward': {
-      // With navigation sync on, moving one is enough; the others follow.
+      // with nav sync on the others follow
       if (!settings.sync.nav) for (const f of frames.values()) send(f, { cmd: act });
       else {
         const first = frames.values().next().value;
@@ -960,7 +957,7 @@ function toolbarAction(act) {
   }
 }
 
-// ---------- messages from the iframes ----------
+// messages from the iframes
 
 window.addEventListener('message', (e) => {
   const d = e.data;
@@ -968,7 +965,7 @@ window.addEventListener('message', (e) => {
   let f = null;
   for (const x of frames.values()) {
     if (x.iframe.contentWindow === e.source) f = x;
-    // B frames only follow A; nothing they report is acted on.
+    // B frames only follow, ignore what they report
     if (x.iframeB.contentWindow === e.source) return;
   }
   if (!f) return;
@@ -1022,7 +1019,7 @@ window.addEventListener('message', (e) => {
   }
 });
 
-// ---------- UI ----------
+// ui
 
 function setOn(b, on) {
   b.classList.toggle('on', on);
@@ -1081,7 +1078,7 @@ function bindUi() {
     renderBp();
   });
 
-  // Ctrl + mouse wheel changes the device zoom
+  // ctrl + wheel zooms the devices
   addEventListener('wheel', (e) => {
     if (!e.ctrlKey) return;
     e.preventDefault();
@@ -1089,7 +1086,7 @@ function bindUi() {
     const z = zoomValue();
     let i = steps.findIndex((s) => s >= z - 0.001);
     if (i < 0) i = steps.length - 1;
-    i = Math.max(0, Math.min(steps.length - 1, i + (e.deltaY < 0 ? 1 : -1)));
+    i = clamp(i + (e.deltaY < 0 ? 1 : -1), 0, steps.length - 1);
     settings.zoom = String(steps[i]);
     $('#zoom').value = settings.zoom;
     save();
@@ -1134,7 +1131,7 @@ function bindUi() {
         : stored[k];
     }
   }
-  // Older installs: add the Fluid device once, at the front.
+  // older installs: add the fluid device once
   if (!settings.fluidAdded) {
     if (!settings.devices.some((d) => d.type === 'fluid')) settings.devices.unshift({ ...FLUID });
     settings.fluidAdded = true;
@@ -1143,7 +1140,7 @@ function bindUi() {
   try {
     await allowFraming();
   } catch (err) {
-    toast('Warning: could not unblock iframes (' + err.message + ')');
+    toast("Couldn't unblock iframes: " + err.message);
   }
   bindUi();
   bindSites();

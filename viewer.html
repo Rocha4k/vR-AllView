@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="viewer.css">
 </head>
 <body>
-  <!-- Icons (24x24 stroke, sharp corners). Usage: <svg class="i"><use href="#i-name"/></svg> -->
+  <!-- icons: <svg class="i"><use href="#i-name"/></svg> -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
     <symbol id="i-forward" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
@@ -43,11 +43,10 @@
     <symbol id="i-fluid" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14"/><path d="M6.5 12h11M9 9.5L6.5 12 9 14.5M15 9.5l2.5 2.5-2.5 2.5"/></symbol>
     <symbol id="i-compare" viewBox="0 0 24 24"><rect x="3" y="3" width="12" height="12"/><path d="M9 15v6h12V9h-6"/></symbol>
     <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h15M15 4l4 4-4 4M20 16H5M9 12l-4 4 4 4"/></symbol>
-    <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 12h10"/></symbol>
   </svg>
 
   <header class="bar">
-    <div class="row top">
+    <div class="row">
       <div class="brand" title="AllView">
         <img class="logo" src="icons/icon-48.png" width="22" height="22" alt="">
         <span>All<b>View</b></span>
@@ -126,7 +125,7 @@
           <svg class="i dim"><use href="#i-globe"/></svg>
           <input id="cmpBase" spellcheck="false" autocomplete="off" placeholder="https://staging.example.com" aria-label="Address of site B">
         </label>
-        <label class="sel cmp-pick" title="Pick B from your favorite sites">
+        <label class="sel" title="Pick B from your favorite sites">
           <select id="cmpPick" aria-label="Pick from favorite sites"></select>
           <svg class="i caret"><use href="#i-chevron"/></svg>
         </label>
