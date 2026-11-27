@@ -1,0 +1,5 @@
+# private planning notes (security details, legal)
+*.private.md
+
+# impeccable design-critique snapshots
+.impeccable/
